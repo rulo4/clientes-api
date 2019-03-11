@@ -35,5 +35,8 @@ public class Cliente implements Serializable {
     @Temporal(TemporalType.DATE)
     private Date creacion;
 
-//    private static final long serialVersionUID = 1L;
+    @PrePersist
+    public void prePersist(){
+        creacion = new Date();
+    }
 }

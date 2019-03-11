@@ -12,11 +12,27 @@ import java.util.List;
 public class ClienteService implements IClienteService {
 
     @Autowired
-    private ICLienteDao icLienteDao;
+    private ICLienteDao cLienteDao;
 
     @Override
     @Transactional(readOnly = true)
     public List<Cliente> findAll() {
-        return (List<Cliente>) icLienteDao.findAll();
+        return (List<Cliente>) cLienteDao.findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Cliente finfdById(Long id) {
+        return cLienteDao.findById(id).orElse(null);
+    }
+
+    @Override
+    public Cliente save(Cliente cliente) {
+        return cLienteDao.save(cliente);
+    }
+
+    @Override
+    public void delete(Long id) {
+        cLienteDao.deleteById(id);
     }
 }
