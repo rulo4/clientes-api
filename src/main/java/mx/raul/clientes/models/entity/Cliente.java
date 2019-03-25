@@ -1,37 +1,32 @@
 package mx.raul.clientes.models.entity;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 import javax.persistence.*;
+import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.Date;
 
+@Data
 @Entity
 @Table(name = "clientes")
 public class Cliente implements Serializable {
 
-    @Getter
-    @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Getter
-    @Setter
+    @Column(nullable = false)
+    @Size(min = 1)
     private String nombre;
 
-    @Getter
-    @Setter
     private String apellido;
 
-    @Getter
-    @Setter
+    @Column(nullable = false, unique = true)
+    @Size(min = 1)
     private String email;
 
-    @Getter
-    @Setter
-    @Column(name = "creacion")
+    @Column(name = "creacion", updatable = false)
     @Temporal(TemporalType.DATE)
     private Date creacion;
 
