@@ -28,17 +28,17 @@ public class ClienteController {
     @GetMapping("/clientes/{id}")
     @ResponseStatus(HttpStatus.OK)
     public ResponseEntity<?> show(@PathVariable Long id) {
+        Map<String, Object> response = new HashMap<>();
         try {
             Cliente cliente = clienteService.finfdById(id);
             if (cliente != null) {
-                return new ResponseEntity<>(cliente, HttpStatus.OK);
+                response.put("cliente", cliente);
+                return new ResponseEntity<>(response, HttpStatus.OK);
             } else {
-                Map<String, Object> response = new HashMap<>();
                 response.put("msj", "No existe cliente con ID " + id);
                 return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
             }
         } catch (DataAccessException e) {
-            Map<String, Object> response = new HashMap<>();
             response.put("msj", "Error al intentar obtener datos");
             response.put("err", e.getMessage() + ". " + e.getMostSpecificCause());
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
