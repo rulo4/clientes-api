@@ -1,9 +1,11 @@
 package mx.raul.clientes.controllers;
 
 import mx.raul.clientes.models.entity.Cliente;
-import mx.raul.clientes.models.service.IClienteService;
+import mx.raul.clientes.models.service.IClienteJpaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -20,17 +22,23 @@ import java.util.Map;
 public class ClienteController {
 
     private static final String CLIENTE_RESPONSE_KEY = "cliente";
+    private static final Integer PAGE_SIZE = 3;
 
-    private IClienteService clienteService;
+    private IClienteJpaService clienteService;
 
     @Autowired
-    public ClienteController(IClienteService clienteService) {
+    public ClienteController(IClienteJpaService clienteService) {
         this.clienteService = clienteService;
     }
 
     @GetMapping("/clientes")
     public List<Cliente> index() {
         return clienteService.findAll();
+    }
+
+    @GetMapping("/clientes/pagina/{pagina}")
+    public Page<Cliente> index(@PathVariable Integer pagina) {
+        return clienteService.findAll(PageRequest.of(pagina, PAGE_SIZE));
     }
 
     @GetMapping("/clientes/{id}")
