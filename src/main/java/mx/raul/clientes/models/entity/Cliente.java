@@ -36,6 +36,8 @@ public class Cliente implements Serializable {
     @Temporal(TemporalType.DATE)
     private Date creacion;
 
+    private String foto;
+
     @PrePersist
     public void prePersist(){
         creacion = new Date();

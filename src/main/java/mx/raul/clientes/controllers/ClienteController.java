@@ -3,15 +3,25 @@ package mx.raul.clientes.controllers;
 import mx.raul.clientes.models.entity.Cliente;
 import mx.raul.clientes.models.service.IClienteJpaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.Valid;
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +33,7 @@ public class ClienteController {
 
     private static final String CLIENTE_RESPONSE_KEY = "cliente";
     private static final Integer PAGE_SIZE = 3;
+    private static final String DIRECTORIO_FOTOS = "resources/fotos";
 
     private IClienteJpaService clienteService;
 
@@ -121,6 +132,7 @@ public class ClienteController {
     public ResponseEntity<Map> delete(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         try {
+            deletePhoto(id);
             clienteService.delete(id);
             response.put("msj", "Cliente eliminado");
             return new ResponseEntity<>(response, HttpStatus.OK);
@@ -130,6 +142,59 @@ public class ClienteController {
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @PostMapping("/clientes/upload")
+    public ResponseEntity<Map> uploadFile(@RequestParam("archivo") MultipartFile archivo, @RequestParam("id") Long id) {
+        Cliente cliente = clienteService.finfdById(id);
+        Map<String, Object> response = new HashMap<>();
+        if (!archivo.isEmpty()) {
+            String nombreArchivo = archivo.getOriginalFilename();
+            Path rutaArchivo = Paths.get(DIRECTORIO_FOTOS).resolve(nombreArchivo).toAbsolutePath();
+            try {
+                Files.copy(archivo.getInputStream(), rutaArchivo);
+            } catch (IOException e) {
+                response.put("msj", "Error al intentar subir archivo");
+                response.put("err", e.getMessage());
+                return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            deletePhoto(cliente.getId());
+            cliente.setFoto(nombreArchivo);
+            clienteService.save(cliente);
+            response.put("msj", "Archivo agregado");
+            response.put("cliente", cliente);
+        }
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/resources/fotos/{nombreFoto:.+}")
+    public ResponseEntity<Resource> getFoto(@PathVariable String nombreFoto) {
+        Path rutaFoto = Paths.get(DIRECTORIO_FOTOS).resolve(nombreFoto).toAbsolutePath();
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Resource foto = new UrlResource(rutaFoto.toUri());
+            response.put("foto", foto);
+            return ResponseEntity
+                    .ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\""+ foto.getFilename() +"\"")
+                    .body(foto);
+        } catch (MalformedURLException e) {
+//            response.put("msj", "Error al intentar obtener archivo");
+//            response.put("err", e.getMessage());
+//            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new RuntimeException("Error al intentar leer archivo");
+        }
+    }
+
+    private void deletePhoto(Long clienteId) {
+        Cliente cliente = clienteService.finfdById(clienteId);
+        String nombreArchivoAnterior = cliente.getFoto();
+        if (nombreArchivoAnterior != null && !nombreArchivoAnterior.isEmpty()) {
+            Path rutaAnterior = Paths.get(DIRECTORIO_FOTOS).resolve(nombreArchivoAnterior).toAbsolutePath();
+            File archivoAnterior = rutaAnterior.toFile();
+            archivoAnterior.delete();
+        }
+    }
+
 
     private ResponseEntity<Map> validate(BindingResult bindingResult) {
         Map<String, Object> response = new HashMap<>();
